@@ -45,7 +45,7 @@ const CSS = `
   --twb-accent: var(--dshe-accent, #f5a623);
   --twb-accent-dim: rgba(245, 166, 35, .12);
   --twb-accent-line: rgba(245, 166, 35, .36);
-  --twb-accent-glow: rgba(245, 166, 35, .18);
+  --twb-accent-glow: rgba(245, 166, 35, .04);
 
   --twb-ok: #34d399;
   --twb-ok-dim: rgba(52, 211, 153, .12);
@@ -59,13 +59,13 @@ const CSS = `
   --twb-cyan: #22d3ee;
 
   /* ── 字体刻度 ────────────────────────────────────── */
-  --twb-fs-xs: 10.5px;   /* 上标、分组标签 */
-  --twb-fs-sm: 11.5px;   /* 辅助说明 */
-  --twb-fs-base: 13px;   /* 正文 */
-  --twb-fs-md: 14px;     /* 强调正文、输入框 */
-  --twb-fs-lg: 16px;     /* 页面标题 */
-  --twb-fs-xl: 22px;     /* 统计数值 */
-  --twb-fs-2xl: 28px;    /* 大号指标 */
+  --twb-fs-xs: 11.5px;   /* 上标、分组标签 */
+  --twb-fs-sm: 12.5px;   /* 辅助说明 */
+  --twb-fs-base: 14px;   /* 正文 */
+  --twb-fs-md: 15px;     /* 强调正文、输入框 */
+  --twb-fs-lg: 17.5px;   /* 页面标题 */
+  --twb-fs-xl: 24px;     /* 统计数值 */
+  --twb-fs-2xl: 30px;    /* 大号指标 */
 
   --twb-font: inherit;
   --twb-mono: ui-monospace, "SF Mono", "Cascadia Mono", "Consolas", monospace;
@@ -99,6 +99,15 @@ const CSS = `
 }
 
 /* 页面底部氛围光：极淡的径向渐变，让大片留白不空 */
+/* ── 背景光影：三层叠加，全部在内容之下且极低对比 ────────
+ * 第 1 层：极光色晕（琥珀 + 青蓝 + 紫），营造深度与方向感
+ * 第 2 层：细微网格，暗示"工作台/工程图"的秩序感
+ * 第 3 层：顶部光带，模拟光源从上方打下来
+ *
+ * 关键约束：所有光晕的不透明度控制在 .05~.10，且远离文字密集区；
+ * 任一效果单独看不明显，叠起来才有氛围。禁止用高饱和度色块，
+ * 那会直接吃掉文字对比度。
+ */
 .twb-root::before {
   content: "";
   position: fixed;
@@ -106,11 +115,43 @@ const CSS = `
   pointer-events: none;
   z-index: 0;
   background:
-    radial-gradient(900px 420px at 12% -8%, var(--twb-accent-glow), transparent 62%),
-    radial-gradient(760px 380px at 92% 4%, rgba(96, 165, 250, .07), transparent 60%);
-  opacity: .75;
+    /* 左上琥珀主光：范围收窄到角落，中心区保持纯净 */
+    radial-gradient(620px 320px at 2% -14%, var(--twb-accent-glow), transparent 66%),
+    /* 右上青蓝辅光，与主光形成冷暖对比 */
+    radial-gradient(560px 300px at 100% -8%, rgba(96, 165, 250, .030), transparent 64%),
+    /* 底部紫色反光：也只贴边 */
+    radial-gradient(760px 260px at 50% 112%, rgba(167, 139, 250, .022), transparent 68%);
 }
+
+/* 网格纹理：24px 细线，仅在深色下可见，提供秩序感 */
+.twb-root::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    linear-gradient(to right, var(--twb-grid-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--twb-grid-line) 1px, transparent 1px);
+  background-size: 24px 24px;
+  /* 向外径向淡出：中心清晰、边缘消失，不会形成"表格"压迫感 */
+  mask-image: radial-gradient(ellipse 85% 70% at 50% 32%, #000 8%, transparent 78%);
+  -webkit-mask-image: radial-gradient(ellipse 85% 70% at 50% 32%, #000 8%, transparent 78%);
+}
+
 .twb-root > * { position: relative; z-index: 1; }
+
+/* 顶栏下方光带：模拟顶灯，让页面顶部更亮、更有立体感 */
+.twb-body::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 180px;
+  pointer-events: none;
+  background: linear-gradient(180deg, var(--twb-top-light), transparent);
+  z-index: 0;
+}
+.twb-body { position: relative; }
+.twb-body > * { position: relative; z-index: 1; }
 
 /* 浅色令牌：显式 data-theme=light 与系统跟随共用同一组值 */
 /* 浅色令牌：显式 data-theme=light 与系统跟随共用同一组值。
@@ -133,6 +174,9 @@ const CSS = `
   --twb-hover: rgba(15, 23, 42, .035);
   --twb-active: rgba(15, 23, 42, .06);
   --twb-selected: rgba(180, 100, 0, .08);
+  /* 浅色下网格线用深色，不透明度更低 */
+  --twb-grid-line: rgba(15, 23, 42, .010);
+  --twb-top-light: rgba(15, 23, 42, .008);
 
   /* 线条 */
   --twb-line: var(--dshe-border, rgba(15, 23, 42, .10));
@@ -150,7 +194,7 @@ const CSS = `
   --twb-accent: var(--dshe-accent, #b45309);
   --twb-accent-dim: rgba(180, 83, 9, .09);
   --twb-accent-line: rgba(180, 83, 9, .28);
-  --twb-accent-glow: rgba(180, 83, 9, .07);
+  --twb-accent-glow: rgba(180, 83, 9, .035);
 
   --twb-ok: #047857;
   --twb-ok-dim: rgba(4, 120, 87, .09);
@@ -190,6 +234,12 @@ const CSS = `
     --twb-hover: rgba(15, 23, 42, .035);
     --twb-active: rgba(15, 23, 42, .06);
     --twb-selected: rgba(180, 100, 0, .08);
+  /* 浅色下网格线用深色，不透明度更低 */
+  --twb-grid-line: rgba(15, 23, 42, .010);
+  --twb-top-light: rgba(15, 23, 42, .008);
+    /* 浅色下网格线用深色，不透明度更低 —— 白底对纹理更敏感 */
+    --twb-grid-line: rgba(15, 23, 42, .010);
+    --twb-top-light: rgba(15, 23, 42, .008);
 
     --twb-line: var(--dshe-border, rgba(15, 23, 42, .10));
     --twb-line-strong: rgba(15, 23, 42, .18);
@@ -204,7 +254,7 @@ const CSS = `
     --twb-accent: var(--dshe-accent, #b45309);
     --twb-accent-dim: rgba(180, 83, 9, .09);
     --twb-accent-line: rgba(180, 83, 9, .28);
-    --twb-accent-glow: rgba(180, 83, 9, .07);
+    --twb-accent-glow: rgba(180, 83, 9, .035);
 
     --twb-ok: #047857;
     --twb-ok-dim: rgba(4, 120, 87, .09);
@@ -504,10 +554,10 @@ textarea.twb-input { resize: vertical; line-height: 1.65; min-height: 64px; font
 .twb-table td.num, .twb-table th.num {
   text-align: right;
   font-family: var(--twb-mono);
-  font-size: 12.5px;
+  font-size: var(--twb-fs-base);
   font-variant-numeric: tabular-nums;
 }
-.twb-table td.mono { font-family: var(--twb-mono); font-size: 12.5px; }
+.twb-table td.mono { font-family: var(--twb-mono); font-size: var(--twb-fs-base); }
 /* 次要列：弱化但不低于 fg-3 */
 .twb-table td .twb-muted, .twb-table td.muted {
   color: var(--twb-fg-3); font-size: var(--twb-fs-sm);
@@ -720,7 +770,7 @@ textarea.twb-input { resize: vertical; line-height: 1.65; min-height: 64px; font
 .twb-toast {
   display: flex; align-items: center; gap: 8px;
   padding: 9px 15px; border-radius: var(--twb-r);
-  font-size: 12.5px; font-weight: 500;
+  font-size: var(--twb-fs-base); font-weight: 500;
   background: var(--twb-overlay); color: var(--twb-fg);
   border: 1px solid var(--twb-line-strong);
   box-shadow: var(--twb-shadow-lg);
@@ -797,7 +847,7 @@ textarea.twb-input { resize: vertical; line-height: 1.65; min-height: 64px; font
   border-radius: var(--twb-r-sm);
 }
 .twb-seg button {
-  font: inherit; font-size: 11.5px; font-weight: 500;
+  font: inherit; font-size: var(--twb-fs-sm); font-weight: 500;
   padding: 5px 12px; border-radius: 4px; cursor: pointer;
   border: none; background: transparent; color: var(--twb-fg-3);
   transition: all var(--twb-dur) var(--twb-ease);
@@ -820,10 +870,10 @@ textarea.twb-input { resize: vertical; line-height: 1.65; min-height: 64px; font
   border-radius: var(--twb-r-sm);
   background: var(--twb-sunken);
   border-top: 2px solid var(--twb-fg-4);
-  font-size: 11px; font-weight: 600; letter-spacing: .03em;
+  font-size: var(--twb-fs-sm); font-weight: 600; letter-spacing: .03em;
 }
 .twb-col-head .n {
-  font-family: var(--twb-mono); font-size: 11px;
+  font-family: var(--twb-mono); font-size: var(--twb-fs-sm);
   color: var(--twb-fg-3); background: var(--twb-overlay);
   padding: 0 6px; border-radius: 3px; min-width: 20px; text-align: center;
 }
@@ -834,12 +884,12 @@ textarea.twb-input { resize: vertical; line-height: 1.65; min-height: 64px; font
   transition: border-color var(--twb-dur) var(--twb-ease), transform var(--twb-dur) var(--twb-ease);
 }
 .twb-tile:hover { border-color: var(--twb-line-strong); transform: translateY(-1px); }
-.twb-tile .t { font-size: 12px; font-weight: 600; color: var(--twb-fg); margin-bottom: 3px;
+.twb-tile .t { font-size: var(--twb-fs-sm); font-weight: 600; color: var(--twb-fg); margin-bottom: 3px;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.twb-tile .m { font-size: 10.5px; color: var(--twb-fg-4); margin-bottom: 7px; }
+.twb-tile .m { font-size: var(--twb-fs-xs); color: var(--twb-fg-4); margin-bottom: 7px; }
 .twb-tile .acts { display: flex; gap: 3px; flex-wrap: wrap; margin-top: 7px; }
 .twb-tile .acts button {
-  font: inherit; font-size: 9.5px; padding: 1px 6px; border-radius: 3px;
+  font: inherit; font-size: var(--twb-fs-xs); padding: 1px 6px; border-radius: 3px;
   border: 1px solid var(--twb-line); background: transparent;
   color: var(--twb-fg-4); cursor: pointer;
   transition: all var(--twb-dur) var(--twb-ease);
@@ -848,7 +898,7 @@ textarea.twb-input { resize: vertical; line-height: 1.65; min-height: 64px; font
 
 /* ── 代码/日志块 ────────────────────────────────────────── */
 .twb-pre {
-  font-family: var(--twb-mono); font-size: 11.5px; line-height: 1.7;
+  font-family: var(--twb-mono); font-size: var(--twb-fs-sm); line-height: 1.7;
   padding: 11px 13px; border-radius: var(--twb-r-sm);
   background: var(--twb-sunken); border: 1px solid var(--twb-line);
   color: var(--twb-fg-2); overflow: auto; white-space: pre-wrap; word-break: break-all;
@@ -906,28 +956,28 @@ textarea.twb-input { resize: vertical; line-height: 1.65; min-height: 64px; font
 .twb-cmdk-input::placeholder { color: var(--twb-fg-4); }
 .twb-cmdk-list { max-height: 340px; overflow-y: auto; padding: 6px; }
 .twb-cmdk-group {
-  font-size: 9.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+  font-size: var(--twb-fs-xs); font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
   color: var(--twb-fg-4); padding: 8px 10px 4px;
 }
 .twb-cmdk-item {
   display: flex; align-items: center; gap: 10px;
   padding: 9px 11px; border-radius: var(--twb-r-sm);
-  cursor: pointer; font-size: 13px; color: var(--twb-fg-2);
+  cursor: pointer; font-size: var(--twb-fs-base); color: var(--twb-fg-2);
 }
 .twb-cmdk-item.on { background: var(--twb-accent-dim); color: var(--twb-fg); }
-.twb-cmdk-item .hint { margin-left: auto; font-size: 10.5px; color: var(--twb-fg-4); }
+.twb-cmdk-item .hint { margin-left: auto; font-size: var(--twb-fs-xs); color: var(--twb-fg-4); }
 .twb-cmdk-foot {
   display: flex; gap: 14px; padding: 8px 14px;
   border-top: 1px solid var(--twb-line);
   background: var(--twb-sunken);
-  font-size: 10.5px; color: var(--twb-fg-4);
+  font-size: var(--twb-fs-xs); color: var(--twb-fg-4);
 }
 .twb-cmdk-foot kbd {
-  font-family: var(--twb-mono); font-size: 10px;
+  font-family: var(--twb-mono); font-size: var(--twb-fs-xs);
   padding: 1px 5px; border-radius: 3px;
   border: 1px solid var(--twb-line); background: var(--twb-raised);
 }
-.twb-cmdk-empty { padding: 28px; text-align: center; color: var(--twb-fg-4); font-size: 12.5px; }
+.twb-cmdk-empty { padding: 28px; text-align: center; color: var(--twb-fg-4); font-size: var(--twb-fs-base); }
 
 /* ── 顶栏搜索触发与右侧工具 ─────────────────────────────── */
 .twb-cmd-trigger {
@@ -935,7 +985,7 @@ textarea.twb-input { resize: vertical; line-height: 1.65; min-height: 64px; font
   margin: 0 0 0 14px; padding: 5px 9px;
   border: 1px solid var(--twb-line); border-radius: var(--twb-r-sm);
   background: var(--twb-sunken); color: var(--twb-fg-4);
-  font: inherit; font-size: 11.5px; cursor: pointer;
+  font: inherit; font-size: var(--twb-fs-sm); cursor: pointer;
   transition: color var(--twb-dur) var(--twb-ease), border-color var(--twb-dur) var(--twb-ease);
   flex: 0 0 auto;
 }
@@ -943,7 +993,7 @@ textarea.twb-input { resize: vertical; line-height: 1.65; min-height: 64px; font
   color: var(--twb-fg-2); border-color: var(--twb-line-strong);
 }
 .twb-cmd-trigger kbd {
-  font-family: var(--twb-mono); font-size: 9.5px;
+  font-family: var(--twb-mono); font-size: var(--twb-fs-xs);
   padding: 1px 4px; border-radius: 3px;
   border: 1px solid var(--twb-line); background: var(--twb-raised);
   color: var(--twb-fg-4);
