@@ -1,0 +1,16 @@
+# Bundle patch: 把外贸工作台插入 profile（默认启用；config 可被用户 patch 层覆盖）
+- insert:
+    - id: trade-workbench
+      name: dsh-trade-workbench
+      config:
+        # 留空 = 用插件目录下的 data/（<包根>/data/trade.db + data/leads/）
+        # 想放别处就填绝对路径，如 D:/trade-data
+        dataDir: ""
+        # 首次启动时把 ~/.dsh/trade-workbench 的旧库搬过来（新目录已有库则跳过）
+        migrateLegacy: true
+        # 首次启动时把旧 ~/.waimao 的线索/配置/审计导入进来（导入前自动备份）
+        migrateLeads: true
+        # 获客工具名前缀：避免与其他插件重名；设 "" 可还原为 lead_search 等原始名
+        toolPrefix: "twb_"
+        # 是否启动获客定时任务（序列执行、回复扫描、官网监控）
+        leadsCron: true
