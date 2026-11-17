@@ -35,7 +35,11 @@ const call = async (path, body, method = "POST", raw) => {
 const rpc = (payload) => call(P + "/rpc", payload);
 
 test("注册在 Connection 的 API 通道上（载体无关），不是 webServer 路由", () => {
-  assert.equal(routes.size, 3, "应注册 health/rpc/upload 三条精确路由");
+  // 断言"关键路由存在"而非固定数量：新增能力（知识库上传/下载、PI、单证）
+  // 都会增加路由，写死数字会让每次扩展都改测试，反而弱化了真正的契约。
+  for (const required of ["/health", "/rpc", "/upload", "/kb-upload", "/kb-file", "/export/pi", "/files"]) {
+    assert.ok(routes.has(P + required), "缺少必需路由: " + required);
+  }
   for (const path of routes.keys()) assert.ok(path.startsWith("/api/"), "路径必须在 /api 下: " + path);
   assert.ok(ctx.webServer === undefined, "不应依赖 webServer");
 });

@@ -28,4 +28,43 @@ ALTER TABLE customers ADD COLUMN fit TEXT DEFAULT '';
 CREATE INDEX idx_cust_lead ON customers(lead_id);
 CREATE INDEX idx_cust_domain ON customers(domain);
 ` },
+  { version: 3, sql: `
+-- 知识库从 kb.json 迁到 SQLite，并引入文件附件。
+--
+-- 为什么换库：原实现是单文件 JSON 全量读写，加附件元数据后每次改一条都要
+-- 重写整库；且文件信息与文本条目混在一个数组里，查"某条目有哪些附件"只能
+-- 全表扫描。分成两张表后，附件挂载、按条目过滤、按内容哈希去重都是索引查询。
+--
+-- kb_files.entry_id 允许为 NULL：用户可以选择先传文件、稍后再归类（散文件）。
+CREATE TABLE kb_entries (
+  id          TEXT PRIMARY KEY,
+  type        TEXT NOT NULL DEFAULT 'product',
+  title       TEXT NOT NULL,
+  content     TEXT NOT NULL DEFAULT '',
+  tags        TEXT NOT NULL DEFAULT '[]',
+  version     INTEGER NOT NULL DEFAULT 1,
+  source      TEXT NOT NULL DEFAULT 'user',
+  created_at  TEXT NOT NULL DEFAULT '',
+  updated_at  TEXT NOT NULL DEFAULT ''
+);
+CREATE INDEX idx_kbe_type  ON kb_entries(type);
+CREATE INDEX idx_kbe_updated ON kb_entries(updated_at DESC);
+
+CREATE TABLE kb_files (
+  id             TEXT PRIMARY KEY,
+  entry_id       TEXT,
+  name           TEXT NOT NULL,
+  stored         TEXT NOT NULL,
+  size           INTEGER NOT NULL DEFAULT 0,
+  mime           TEXT NOT NULL DEFAULT '',
+  sha256         TEXT NOT NULL,
+  extract_status TEXT NOT NULL DEFAULT 'pending',
+  extract_error  TEXT NOT NULL DEFAULT '',
+  ocr_used       INTEGER NOT NULL DEFAULT 0,
+  created_at     TEXT NOT NULL DEFAULT ''
+);
+CREATE UNIQUE INDEX idx_kbf_sha ON kb_files(sha256);
+CREATE INDEX idx_kbf_entry ON kb_files(entry_id);
+CREATE INDEX idx_kbf_status ON kb_files(extract_status);
+` },
 ];

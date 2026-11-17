@@ -130,6 +130,91 @@ function save(state) { /* 事务内 upsert 全量 + 删除已移除行 */ }
 
 上游页面是字符串拼接的 HTML + 内联 `<script>`（`pages.js`，974 行），不能直接进 React，只能按页拆解重写。
 
+## 知识库与文件解析
+
+### 为什么从 kb.json 换成 SQLite
+
+原实现是单文件 JSON 全量读写。加附件后，每次改一个条目的元数据都要重写整库；
+「某条目有哪些附件」只能全表扫描。拆成 `kb_entries` + `kb_files` 后，
+附件挂载、按条目过滤、按内容哈希去重都是索引查询。
+
+`kb.js` 的对外 API（`upsert`/`search`/`list`/`remove`/`contextFor`）签名不变，
+只换了存储实现 —— 54 个工具与 5 个 RPC 一行都没改。
+
+### 文件存储布局
+
+```
+data/kb-files/<sha256前2位>/<sha256>.<ext>
+```
+
+按内容寻址：同一份文件传多次只占一份磁盘。路径完全由哈希 + 白名单扩展名拼出，
+**绝不使用用户传入的文件名落盘**（防路径注入）。
+
+限制：单文件 ≤ 50MB；zip 解压后 ≤ 100MB（防 zip bomb）；抽取文本 ≤ 200KB。
+
+### 三个解析器的实现取舍
+
+| 格式 | 方案 | 为什么 |
+|---|---|---|
+| docx / xlsx | `node:zlib` 手解 zip + 正则抽 XML | 格式是标准 OOXML，百来行可控；引库会带来版本传递风险 |
+| pdf | `unpdf` | `pdf-parse` 2.x 需 20MB 且依赖原生 `@napi-rs/canvas`；`pdfjs-dist` 36MB。`unpdf` 只 3.5MB 且零依赖 |
+| 图片 | `tesseract.js`（WASM） | 本机 76 个 provider / 504 个模型全部 `vision: null`，没有任何模型能看图 |
+
+### OCR 的两个坑
+
+**1. 中文字间插空格。** Tesseract 输出 `"不 锈 钢 保 温 杯"`，直接入库会让子串检索
+完全失效。清洗规则只删**两个 CJK 字符之间**的空格：
+
+```js
+line.replace(new RegExp(`([${CJK}])\\s+(?=[${CJK}])`, 'g'), '$1')
+```
+
+关键是**先按行 split 再处理**。用 `\s+` 全局替换会把标题和正文粘成一行，可读性崩掉。
+
+**2. 语言包只有 chi_sim。** `@tesseract.js-data/chi_sim` 只带 `chi_sim.traineddata.gz`，
+写成 `createWorker('chi_sim+eng')` 会去找不存在的 `eng.traineddata.gz` 而整体失败。
+中文包自带拉丁字符集，中英混排照样能识别。
+
+worker 会复用（每次新建要 3~5 秒），空闲 5 分钟自动释放 WASM 堆。
+
+### 构建必须外置解析依赖
+
+```js
+// scripts/build.mjs
+external: ["@deepseek-ai/*", "unpdf", "tesseract.js", "@tesseract.js-data/*"]
+```
+
+不外置的话 esbuild 会把它们打进 bundle，运行时动态加载 worker / wasm 的路径会失效。
+
+### 本机 npm 安装会静默失败
+
+MSYS Bash 下 `npm.cmd` 不执行，`npm install` 静默返回 0 但什么都没装。必须：
+
+```bash
+node "C:/Program Files/nodejs/node_modules/npm/bin/npm-cli.js" install <pkg>
+```
+
+### 顺手修掉的两个既有缺陷
+
+排查路由时发现 `/export/pi/:id` 与 `/files/:name` 从未注册成路由
+（`HostConnectionFetch` 只做**精确 path 匹配**，无前缀/通配），所以 PI 打印和
+单证下载一直是坏的，测试只断言了「动态路径不在固定路由表内」所以没暴露。
+
+改为固定路径 + 查询参数：
+
+```
+/api/trade-workbench/export/pi?id=123
+/api/trade-workbench/files?name=xxx.pdf
+/api/trade-workbench/kb-file?id=F123
+```
+
+### SQLite 连接必须复用
+
+`db.ts` 与 `leads/db.js` 原本各开一个 `DatabaseSync` 指向同一个 `trade.db`。
+同文件双开会产生两个独立的 WAL 写者，并发写时互相 `SQLITE_BUSY`。
+现在由 Host 入口把主库句柄通过 `adoptLeadsDb()` 交接给 leads 层。
+
+
 ## 常用命令
 
 ```bash

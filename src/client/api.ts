@@ -54,8 +54,10 @@ export const api = {
     if (!res.ok) throw new Error(data?.error?.message ?? "HTTP " + res.status);
     return data;
   },
-  piUrl: (quoteId: number) => "/api/trade-workbench/export/pi/" + quoteId,
-  fileUrl: (name: string) => "/api/trade-workbench/files/" + encodeURIComponent(name),
+  // Connection 的路由只做精确 path 匹配，id 只能放查询参数
+  piUrl: (quoteId: number) => "/api/trade-workbench/export/pi?id=" + quoteId,
+  fileUrl: (name: string) => "/api/trade-workbench/files?name=" + encodeURIComponent(name),
+  kbFileUrl: (id: string) => "/api/trade-workbench/kb-file?id=" + encodeURIComponent(id),
 };
 
 /** 获客子系统：与 call() 同一端点，只是 op 带 "模块/动作"。 */

@@ -55,6 +55,27 @@ export function setLeadsDbPath(path) {
   unavailable = null;
 }
 
+/**
+ * 复用宿主已经打开的连接。
+ *
+ * node:sqlite 的 DatabaseSync 对同一文件重复打开会产生两个独立的 WAL 写者，
+ * 并发写时互相阻塞甚至报 SQLITE_BUSY。主库（db.ts）已经打开了 trade.db，
+ * 这里直接把它的句柄接过来，而不是再 new 一个。
+ * 优先于 setLeadsDbPath：调用后 getLeadsDb() 直接返回该句柄。
+ */
+export function adoptLeadsDb(existingHandle) {
+  if (!existingHandle) return false;
+  try {
+    existingHandle.exec(SCHEMA);
+    handle = existingHandle;
+    unavailable = null;
+    return true;
+  } catch (error) {
+    unavailable = new Error('adopt db failed: ' + String(error?.message ?? error));
+    return false;
+  }
+}
+
 export function leadsDbPath() {
   return dbPath;
 }

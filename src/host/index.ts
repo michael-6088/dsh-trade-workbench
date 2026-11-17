@@ -144,7 +144,11 @@ export function apply(ctx: any, config: TradeConfig = {}): void {
       // 数据目录已在上面通过环境变量钉好，此时 import 是安全的。
       // @ts-expect-error leads/ 是原样 fork 的纯 JS，无声明文件
       const leadsDb: any = await import("./leads/db.js");
-      leadsDb.setLeadsDbPath(dbPath);
+      // 复用主库连接而不是再开一个：同文件双开会产生两个 WAL 写者，
+      // 并发写时互相 BUSY。主库这时可能还没打开（懒加载），
+      // 因此先 ready() 拿到句柄再交接。
+      const mainDb = await ready();
+      leadsDb.adoptLeadsDb(mainDb);
       if (config.migrateLeads !== false) {
         try {
           // @ts-expect-error 同上
@@ -202,9 +206,9 @@ export function apply(ctx: any, config: TradeConfig = {}): void {
       const d = await ready();
 
       // PI 打印视图：浏览器直接打开，故保留独立 GET
-      const pi = new RegExp("^" + P + "/export/pi/(\\d+)$").exec(path);
-      if (pi && method === "GET") {
-        const quote = getRow(d, "quotes", Number(pi[1]));
+      if (path === P + "/export/pi" && method === "GET") {
+        const piId = Number(url.searchParams.get("id") ?? 0);
+        const quote = piId ? getRow(d, "quotes", piId) : null;
         if (!quote) return json(404, { error: { code: "not_found", message: "quote not found" } });
         const customer = quote.customer_id ? getRow(d, "customers", quote.customer_id) : null;
         return new Response(renderPi(quote, customer, getSettings(d)), {
@@ -213,9 +217,8 @@ export function apply(ctx: any, config: TradeConfig = {}): void {
         });
       }
       // 单证下载：浏览器直开，故保留独立 GET
-      const dl = new RegExp("^" + P + "/files/(.+)$").exec(path);
-      if (dl && method === "GET") {
-        const name = decodeURIComponent(dl[1]).replace(/[\\/]/g, "");
+      if (path === P + "/files" && method === "GET") {
+        const name = String(url.searchParams.get("name") ?? "").replace(/[\\/]/g, "");
         try {
           const data = readFileSync(join(dataDir, "files", name));
           return new Response(data, {
@@ -234,6 +237,43 @@ export function apply(ctx: any, config: TradeConfig = {}): void {
         const stored = Date.now() + "-" + safe;
         writeFileSync(join(dataDir, "files", stored), file.data);
         return json(200, createRow(d, "documents", { order_id: order, kind: fields.kind ?? "other", file: stored, note: fields.note ?? "" }));
+      }
+
+      // 知识库文件上传：multipart，一次一个文件
+      if (path === P + "/kb-upload" && method === "POST") {
+        const { fields, files } = await readForm(request);
+        const file = files.find((f) => f.data.length);
+        if (!file) throw badRequest("file required");
+        // @ts-expect-error leads/ 是纯 JS
+        const { uploadFile } = await import("./leads/kbFiles.js");
+        const result = await uploadFile({
+          buffer: file.data,
+          name: String(file.filename ?? fields.name ?? "upload"),
+          entryId: fields.entryId ? String(fields.entryId) : undefined,
+          fileOnly: fields.fileOnly === "1",
+          type: fields.type ? String(fields.type) : undefined,
+          force: fields.force === "1",
+        });
+        return json(200, result);
+      }
+
+      // 知识库文件下载/预览。
+      // Connection 的 fetch 路由只做精确 path 匹配（无前缀/通配），
+      // 因此文件 id 走查询参数而不是路径段。
+      if (path === P + "/kb-file" && method === "GET") {
+        const id = url.searchParams.get("id") ?? "";
+        if (!id) throw badRequest("id required");
+        // @ts-expect-error 同上
+        const kbFilesMod: any = await import("./leads/kbFiles.js");
+        const { file, buffer } = kbFilesMod.readFileBytes(id);
+        return new Response(buffer, {
+          status: 200,
+          headers: {
+            "content-type": file.mime || "application/octet-stream",
+            "content-disposition": 'inline; filename="' + encodeURIComponent(file.name) + '"',
+            "cache-control": "private, max-age=300",
+          },
+        });
       }
 
       // 统一 RPC 入口
@@ -287,6 +327,10 @@ export function apply(ctx: any, config: TradeConfig = {}): void {
     { path: P + "/health", methods: ["GET", "HEAD"] },
     { path: P + "/rpc", methods: ["POST"] },
     { path: P + "/upload", methods: ["POST"] },
+    { path: P + "/kb-upload", methods: ["POST"] },
+    { path: P + "/kb-file", methods: ["GET"] },
+    { path: P + "/export/pi", methods: ["GET"] },
+    { path: P + "/files", methods: ["GET"] },
   ];
   for (const route of exact) {
     ctx.effect(() => ctx.connection.fetch.register({

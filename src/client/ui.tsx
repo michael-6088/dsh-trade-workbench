@@ -103,9 +103,15 @@ export function Segmented(props: { value: string; options: [string, string][]; o
     }, label)));
 }
 
-export function Badge(props: { tone?: "ok" | "warn" | "err" | "info" | "accent"; plain?: boolean; children?: React.ReactNode }) {
+export function Badge(props: {
+  tone?: "ok" | "warn" | "err" | "info" | "accent";
+  plain?: boolean;
+  /** 原生 title：悬停显示完整原因（如解析失败详情） */
+  title?: string;
+  children?: React.ReactNode;
+}) {
   const cls = ["twb-badge", props.tone ?? "", props.plain ? "plain" : ""].filter(Boolean).join(" ");
-  return React.createElement("span", { className: cls }, props.children);
+  return React.createElement("span", { className: cls, title: props.title }, props.children);
 }
 
 /* ── Toast ────────────────────────────────────────────── */

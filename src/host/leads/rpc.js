@@ -10,6 +10,7 @@
 import { readConfig, writeConfig, configSummary } from './config.js';
 import * as crmMod from './crm.js';
 import * as kbMod from './kb.js';
+import * as kbFilesMod from './kbFiles.js';
 import * as leadsMod from './leads.js';
 import * as auditMod from './audit.js';
 import * as cronMod from './cron.js';
@@ -320,10 +321,43 @@ export function createLeadsRpc(deps = {}) {
     // ---- 知识库 ----
     'kb/search': async (args) => {
       need(args, 'q');
-      return kbMod.search(String(args.q));
+      return kbMod.search({ query: String(args.q), type: args.type, limit: args.limit });
     },
-    'kb/upsert': async (args) => kbMod.upsert(args ?? {}, { actor: args?.actor ?? 'web' }),
-    'kb/list': async () => kbMod.list(),
+    'kb/upsert': async (args) => kbMod.upsert(args ?? {}),
+    'kb/list': async (args) => kbMod.list({ type: args?.type, limit: args?.limit ?? 50 }),
+    'kb/get': async (args) => {
+      need(args, 'id');
+      return kbMod.get(String(args.id));
+    },
+    'kb/remove': async (args) => {
+      need(args, 'id');
+      return kbMod.remove(String(args.id));
+    },
+
+    // ---- 知识库文件 ----
+    'kb/files': async (args) => kbFilesMod.listFiles({
+      entryId: args?.entryId,
+      status: args?.status,
+      limit: args?.limit,
+    }),
+    'kb/file/stats': async () => kbFilesMod.fileStats(),
+    'kb/file/delete': async (args) => {
+      need(args, 'id');
+      return kbFilesMod.deleteFile(String(args.id));
+    },
+    'kb/file/reparse': async (args) => {
+      need(args, 'id');
+      return kbFilesMod.reparseFile(String(args.id));
+    },
+    'kb/file/attach': async (args) => {
+      need(args, 'id');
+      return kbFilesMod.attachFile(String(args.id), args.entryId ? String(args.entryId) : null);
+    },
+    'kb/file/get': async (args) => {
+      need(args, 'id');
+      const { file, buffer } = kbFilesMod.readFileBytes(String(args.id));
+      return { file, bytes: buffer.length };
+    },
 
     // ---- 抑制列表 / 模板 ----
     'suppress/list': async () => suppressMod.loadSuppress(),
