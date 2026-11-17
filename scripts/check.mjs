@@ -99,6 +99,13 @@ const layoutHooks = [
   [/\.twb-table-wrap\s*\{[^}]*overflow-x:\s*auto/, "表格容器缺少 overflow-x: auto（宽表格会被裁）"],
   [/\.twb-table\s*\{[^}]*min-width:\s*\d+px/, "表格缺少最小宽度保底"],
   [/grid-template-columns:\s*minmax\([^)]*\)\s+minmax\(0,\s*1fr\)/, "分栏右侧应为 minmax(0,1fr)"],
+  // 顶栏：header 自身必须在 flex 上下文里可收缩，否则右侧工具区被挤出容器
+  [/\.twb-header\s*\{[^}]*min-width:\s*0/, ".twb-header 缺少 min-width: 0（右侧工具区会被挤出）"],
+  [/\.twb-header\s*\{[^}]*overflow:\s*hidden/, ".twb-header 缺少 overflow: hidden"],
+  [/\.twb-header-right\s*\{[^}]*flex:\s*0 0 auto/, ".twb-header-right 应固定不压缩"],
+  [/\.twb-tabs\s*\{[^}]*overflow-x:\s*auto/, ".twb-tabs 需要横向滚动"],
+  [/\.twb-tabs\s*\{[^}]*min-width:\s*0/, ".twb-tabs 缺少 min-width: 0（无法收缩）"],
+  [/mask-image:\s*linear-gradient\(90deg/, "Tab 栏缺少右侧渐隐提示（窄屏看不到还有更多）"],
 ];
 if (css) {
   for (const [re, msg] of layoutHooks) {

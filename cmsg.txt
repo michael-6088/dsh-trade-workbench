@@ -1,0 +1,37 @@
+fix: 顶栏右侧被挤出容器，Tab 被截断无提示（v0.7.4）
+
+截图现象：顶栏右侧的主题切换按钮与窗口控件被挤到容器外，
+"交付/支撑/分析" 后半段 Tab 完全不可见，且看不出可以横向滚动。
+
+## 根因
+
+.twb-header 作为 .twb-root 的 flex 子项，没有声明 min-width。
+浏览器默认 min-width:auto，会被「品牌区 + 18 个 Tab + 搜索按钮」
+的最小需求宽度顶开，整条顶栏溢出容器，右侧内容被裁。
+
+上一轮给 .twb-body 加了 min-width:0，但漏了 header 这条链路。
+
+## 修复
+
+顶栏：
+- .twb-header 补 min-width:0 + width:100% + overflow:hidden
+- .twb-brand 由 flex:0 0 auto 改为 0 1 auto，允许收缩
+- .twb-header-right 保持 0 0 auto，永不被压缩（否则会先于 Tab 消失）
+
+Tab 栏：
+- 原来滚动条被完全隐藏，窄屏下用户不知道还有更多 Tab
+- 改为细滚动条 + 右侧 24px 渐隐遮罩，明确暗示"可横向滚动"
+
+窄屏渐进式收起（按优先级让位给导航）：
+- 1200px：隐藏搜索按钮的 ⌘K 提示
+- 1024px：隐藏"搜索"二字，只留图标
+- 900px：隐藏标题文字与分组标签，只留品牌图标
+- 720px：隐藏搜索按钮
+
+## 固化检查
+
+check.mjs 的布局钩子新增 6 项顶栏断言：header 的 min-width/overflow、
+header-right 固定、tabs 的 overflow-x 与 min-width、渐隐遮罩存在。
+已用合规/缺失两组样本验证正则本身正确。
+
+这类问题和上次一样：功能测试全过，只是窗口一窄右侧就看不见。

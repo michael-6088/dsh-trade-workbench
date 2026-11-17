@@ -308,7 +308,14 @@ const CSS = `
 /* 顶栏：毛玻璃 + 渐变底。sticky 让长页面滚动时导航常驻。 */
 .twb-header {
   display: flex; align-items: stretch; gap: 0;
-  padding: 0 var(--twb-sp-5); flex: 0 0 auto;
+  padding: 0 var(--twb-sp-5);
+  /* flex 子项默认 min-width:auto，会被「品牌 + 全部 Tab」的最小需求宽度撑破，
+     导致右侧主题按钮与窗口控件被挤出容器。显式 0 让 header 可收缩，
+     超出部分交给内部 .twb-tabs 的横向滚动。 */
+  flex: 0 0 auto;
+  min-width: 0;
+  width: 100%;
+  overflow: hidden;
   background: var(--twb-raised-grad);
   backdrop-filter: saturate(140%) blur(12px);
   border-bottom: 1px solid var(--twb-line);
@@ -322,7 +329,12 @@ const CSS = `
   opacity: .55; pointer-events: none;
 }
 
-.twb-brand { display: flex; align-items: center; gap: var(--twb-sp-2); padding-right: var(--twb-sp-4); flex: 0 0 auto; }
+.twb-brand {
+  display: flex; align-items: center; gap: var(--twb-sp-2);
+  padding-right: var(--twb-sp-3);
+  /* 允许收缩但不低于图标宽度，标题用省略号兜底 */
+  flex: 0 1 auto; min-width: 0;
+}
 .twb-brand-mark {
   width: 22px; height: 22px; border-radius: 6px; flex: 0 0 auto;
   background: linear-gradient(140deg, var(--twb-accent), color-mix(in srgb, var(--twb-accent) 52%, #000));
@@ -341,9 +353,21 @@ const CSS = `
 .twb-tabs {
   display: flex; align-items: stretch; gap: 2px;
   overflow-x: auto; flex: 1 1 auto; min-width: 0;
-  scrollbar-width: none; -ms-overflow-style: none;
+  /* 细滚动条而非完全隐藏：窄屏下用户需要看到「还有更多 Tab」的线索 */
+  scrollbar-width: thin;
+  scrollbar-color: var(--twb-line-strong) transparent;
+  scroll-behavior: smooth;
 }
-.twb-tabs::-webkit-scrollbar { height: 0; }
+/* 右侧渐隐遮罩：暗示内容被截断，可横向滚动 */
+.twb-tabs {
+  mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 24px), transparent 100%);
+  -webkit-mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 24px), transparent 100%);
+}
+.twb-tabs::-webkit-scrollbar { height: 4px; }
+.twb-tabs::-webkit-scrollbar-thumb {
+  background: var(--twb-line-strong); border-radius: 2px;
+}
+.twb-tabs::-webkit-scrollbar-track { background: transparent; }
 
 .twb-group {
   display: flex; align-items: center; flex: 0 0 auto;
@@ -1036,14 +1060,33 @@ textarea.twb-input { resize: vertical; line-height: 1.65; min-height: 64px; font
 }
 .twb-header-right {
   display: flex; align-items: center; gap: 4px;
-  padding-left: 8px; margin-left: auto;
+  padding-left: var(--twb-sp-2);
   border-left: 1px solid var(--twb-hairline);
+  /* 右侧工具区永不被压缩，否则会先于 Tab 消失 */
   flex: 0 0 auto;
+  margin-left: var(--twb-sp-2);
 }
 /* 窄屏时收起搜索按钮的文字，只留图标 */
+/* 窄屏：逐步收起顶栏里的非核心元素，把宽度让给 Tab */
+@media (max-width: 1200px) {
+  /* 先把搜索按钮的快捷键提示去掉 */
+  .twb-cmd-trigger kbd { display: none; }
+}
+@media (max-width: 1024px) {
+  /* 再收起「搜索」二字，只留放大镜图标 */
+  .twb-cmd-trigger span { display: none; }
+  .twb-cmd-trigger { margin-left: var(--twb-sp-2); padding: 6px; }
+}
 @media (max-width: 900px) {
-  .twb-cmd-trigger span, .twb-cmd-trigger kbd { display: none; }
-  .twb-cmd-trigger { margin-left: 8px; }
+  .twb-header { padding: 0 var(--twb-sp-3); }
+  /* 标题让位给导航：窄屏下只保留品牌图标 */
+  .twb-brand .twb-title { display: none; }
+  .twb-brand { padding-right: var(--twb-sp-2); }
+  .twb-group { display: none; }
+}
+@media (max-width: 720px) {
+  /* 极窄：搜索按钮也收起，导航优先 */
+  .twb-cmd-trigger { display: none; }
 }
 
 /* ── 通用布局工具：替代各面板的重复内联样式 ─────────────── */
