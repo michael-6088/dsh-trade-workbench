@@ -20,3 +20,4 @@ desktop.ini
 # ── 测试与临时文件 ───────────────────────────────────────
 tmp-*.mjs
 coverage/
+commit-msg.txt
