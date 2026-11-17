@@ -81,18 +81,9 @@ function QueuePane() {
         })
       : React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 12 } },
           rows.map((m) => React.createElement("div", {
-            key: m.id,
-            style: {
-              border: "1px solid var(--twb-line)", borderRadius: "var(--twb-r)",
-              background: "var(--twb-raised)", overflow: "hidden", maxWidth: 760,
-            },
+            key: m.id, className: "twb-panel", style: { maxWidth: 760 },
           },
-            React.createElement("div", {
-              style: {
-                display: "flex", alignItems: "center", gap: 10, padding: "10px 14px",
-                borderBottom: "1px solid var(--twb-hairline)", background: "var(--twb-sunken)",
-              },
-            },
+            React.createElement("div", { className: "twb-panel-head" },
               React.createElement("span", { style: { fontWeight: 600, fontSize: 12.5, color: "var(--twb-fg)" } },
                 m.from ?? m.chatId ?? "未知发送方"),
               React.createElement(Badge, { tone: tone(m.status) }, STATUS_LABEL[m.status] ?? m.status ?? "-"),
@@ -100,14 +91,8 @@ function QueuePane() {
                 String(m.ts ?? "").slice(0, 19).replace("T", " "))),
 
             React.createElement("div", { style: { padding: 14 } },
-              React.createElement("div", {
-                style: {
-                  background: "var(--twb-sunken)", border: "1px solid var(--twb-line)",
-                  borderRadius: "12px 12px 12px 3px", padding: "10px 13px",
-                  fontSize: 12.5, lineHeight: 1.7, marginBottom: 12,
-                  whiteSpace: "pre-wrap", color: "var(--twb-fg-2)", maxWidth: 560,
-                },
-              }, m.text ?? m.body ?? ""),
+              React.createElement("div", { className: "twb-bubble twb-mb-4" },
+                m.text ?? m.body ?? ""),
 
               React.createElement("div", { className: "twb-field" },
                 React.createElement("label", null, "AI 草稿 / 回复内容"),
@@ -160,10 +145,7 @@ function BroadcastPane() {
 
   return React.createElement("div", null,
     React.createElement("div", {
-      style: {
-        padding: 13, marginBottom: 16, border: "1px solid var(--twb-line)",
-        borderRadius: "var(--twb-r)", background: "var(--twb-raised)", maxWidth: 780,
-      },
+      className: "twb-panel twb-panel-pad", style: { marginBottom: 16, maxWidth: 780 },
     },
       React.createElement("div", { className: "twb-muted", style: { marginBottom: 12, lineHeight: 1.7 } },
         "群发有随机间隔与每日上限保护，连续 3 次失败会熔断。仍属高风险操作 —— 务必先预览确认收件人名单。"),
@@ -208,12 +190,7 @@ function BroadcastPane() {
         })),
 
       overCap ? React.createElement("div", {
-        style: {
-          padding: "10px 13px", marginBottom: 14, maxWidth: 780,
-          border: "1px solid color-mix(in srgb, var(--twb-err) 34%, transparent)",
-          borderRadius: "var(--twb-r-sm)", background: "var(--twb-err-dim)",
-          color: "var(--twb-err)", fontSize: 12,
-        },
+        className: "twb-alert err", style: { marginBottom: 14, maxWidth: 780 },
       }, `今日额度不足：已发 ${preview.sentToday} + 本次 ${preview.targets.length} 超过上限 ${preview.cap}，超出部分会被自动跳过。`) : null,
 
       React.createElement(Section, { title: "收件人名单（确认后再发送）" },

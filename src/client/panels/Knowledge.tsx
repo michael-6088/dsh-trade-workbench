@@ -211,17 +211,10 @@ export function Knowledge() {
     onDragLeave: () => setDragOver(false),
     onDrop: (e: any) => { e.preventDefault(); setDragOver(false); handleFiles(e.dataTransfer?.files, target); },
     onClick: () => { fileInput.current = fileInput.current || null; fileInput.current?.click?.(); },
-    style: {
-      border: "1px dashed " + (dragOver ? "var(--twb-accent)" : "var(--twb-line)"),
-      borderRadius: "var(--twb-r-sm)",
-      background: dragOver ? "var(--twb-accent-dim)" : "var(--twb-sunken)",
-      padding: "18px 14px", textAlign: "center", cursor: "pointer",
-      transition: "all var(--twb-dur) var(--twb-ease)",
-    },
+    className: "twb-drop" + (dragOver ? " over" : ""),
   },
-    React.createElement("div", { style: { fontSize: 12.5, color: "var(--twb-fg-2)", marginBottom: 4 } },
-      "拖文件到这里，或点击选择"),
-    React.createElement("div", { className: "twb-dim" },
+    React.createElement("div", { className: "t" }, "拖文件到这里，或点击选择"),
+    React.createElement("div", { className: "d" },
       "支持 PDF / Word / Excel / 图片 / 文本；图片自动 OCR，PDF 需有文本层"));
 
   /* ── 右栏详情 ── */
@@ -235,12 +228,8 @@ export function Knowledge() {
         stats && stats.unattached > 0
           ? React.createElement("div", { style: { marginTop: 16 } },
               React.createElement(Section, { title: `未归类文件 (${stats.unattached})` },
-                React.createElement("div", {
-                  style: {
-                    border: "1px solid var(--twb-line)", borderRadius: "var(--twb-r)",
-                    background: "var(--twb-raised)", overflow: "hidden",
-                  },
-                }, fileRows(files.filter((f) => !f.entryId)))))
+                React.createElement("div", { className: "twb-panel" },
+                  fileRows(files.filter((f) => !f.entryId)))))
           : null);
     }
 
@@ -253,10 +242,7 @@ export function Knowledge() {
         if (editing.id) handleFiles(e.dataTransfer?.files, editing.id);
         else toasts.push("先保存条目，再拖文件挂载");
       },
-      style: {
-        border: "1px solid " + (dragOver ? "var(--twb-accent)" : "var(--twb-line)"),
-        borderRadius: "var(--twb-r)", background: "var(--twb-raised)", padding: 14,
-      },
+      className: "twb-panel twb-panel-pad" + (dragOver ? " over" : ""),
     };
 
     const editor = React.createElement("div", dropProps,
@@ -294,12 +280,7 @@ export function Knowledge() {
 
     const attachments = editing.id
       ? React.createElement(Section, { title: `附件 (${files.length})` },
-          React.createElement("div", {
-            style: {
-              border: "1px solid var(--twb-line)", borderRadius: "var(--twb-r)",
-              background: "var(--twb-raised)", overflow: "hidden",
-            },
-          },
+          React.createElement("div", { className: "twb-panel" },
             files.length === 0
               ? React.createElement("div", { className: "twb-muted", style: { padding: 14 } },
                   "还没有附件。把文件拖到上方编辑区即可挂载。")
@@ -316,29 +297,16 @@ export function Knowledge() {
       return React.createElement("div", { className: "twb-muted", style: { padding: 16 } },
         hits ? "没有匹配的条目" : "知识库还是空的，先上传文件或手写一条。");
     }
-    return React.createElement("div", {
-      style: {
-        border: "1px solid var(--twb-line)", borderRadius: "var(--twb-r)",
-        overflow: "hidden", background: "var(--twb-raised)",
+    return React.createElement("div", { className: "twb-panel" },
+      shown.map((r: any) => React.createElement("div", {
+        key: r.id,
+        onClick: () => openEntry(r.id),
+        className: "twb-row" + (selected?.id === r.id ? " on" : ""),
       },
-    }, shown.map((r: any) => React.createElement("div", {
-      key: r.id,
-      onClick: () => openEntry(r.id),
-      style: {
-        padding: "9px 11px", cursor: "pointer", fontSize: 12.5,
-        borderBottom: "1px solid var(--twb-hairline)",
-        background: selected?.id === r.id ? "var(--twb-accent-dim)" : undefined,
-        borderLeft: selected?.id === r.id ? "2px solid var(--twb-accent)" : "2px solid transparent",
-      },
-    },
-      React.createElement("div", {
-        style: {
-          fontWeight: 550, color: "var(--twb-fg)", marginBottom: 2,
-          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-        },
-      }, r.title ?? "-"),
-      React.createElement("div", { className: "twb-dim" },
-        `${typeLabel(r.type)} · v${r.version ?? 1}`))));
+        React.createElement("div", { className: "twb-grow" },
+          React.createElement("div", { className: "t" }, r.title ?? "-"),
+          React.createElement("div", { className: "m" },
+            `${typeLabel(r.type)} · v${r.version ?? 1}`)))));
   };
 
   const leftPane = React.createElement("div", null,
@@ -402,10 +370,6 @@ export function Knowledge() {
       title: "知识库",
       sub: "产品 · 政策 · 案例 · 市场规则 —— AI 回信时的事实依据",
     }),
-    React.createElement("div", {
-      style: {
-        display: "grid", gridTemplateColumns: "minmax(280px, 360px) 1fr",
-        gap: 16, alignItems: "start",
-      },
-    }, leftPane, React.createElement("div", null, renderDetail(), statsPane)));
+    React.createElement("div", { className: "twb-split" },
+      leftPane, React.createElement("div", null, renderDetail(), statsPane)));
 }
