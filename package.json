@@ -1,6 +1,6 @@
 {
   "name": "dsh-trade-workbench",
-  "version": "0.7.2",
+  "version": "0.7.3",
   "description": "全流程外贸工作台：获客(三层搜索/背调/邮箱验证) → 转化(SOP流程/开发信/序列/客服审核) → 交付(询盘/报价PI/订单/单证/收汇) → 支撑(知识库+OCR文件导入/运维) → 分析(看板/效果统计)。19 个面板，54 个 AI 工具，本地 SQLite。",
   "type": "module",
   "license": "MIT",

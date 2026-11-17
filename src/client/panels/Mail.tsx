@@ -72,7 +72,7 @@ export function Mail() {
 
   /** 写邮件区：左侧线索列表 + 右侧撰写面板。拆成函数是为了避免深层三元嵌套。 */
   const composePane = () => React.createElement("div", {
-    style: { display: "grid", gridTemplateColumns: "minmax(220px, 300px) 1fr", gap: 16, alignItems: "start" },
+    style: { display: "grid", gridTemplateColumns: "minmax(200px, 280px) minmax(0, 1fr)", gap: 16, alignItems: "start" },
   },
     React.createElement("div", {
       style: {

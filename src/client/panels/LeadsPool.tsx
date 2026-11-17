@@ -116,7 +116,7 @@ export function LeadsPool() {
           ? React.createElement(Empty, { title: "线索池是空的", desc: "去「线索搜索」跑一次搜索，勾选结果后点「加工」，线索会自动入池。" })
           : React.createElement("div", {
               className: "twb-board",
-              style: { gridTemplateColumns: `repeat(${STATUSES.length}, minmax(178px, 1fr))` },
+              style: { gridTemplateColumns: `repeat(${STATUSES.length}, minmax(150px, 1fr))` },
             }, STATUSES.map(renderColumn)))
       : React.createElement(SortableTable, {
           columns: listColumns, rows: listSort.sorted, sortKey: listSort.key, asc: listSort.asc, onSort: listSort.toggle,

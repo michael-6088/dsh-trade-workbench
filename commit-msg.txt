@@ -1,0 +1,31 @@
+fix: 窄窗下右侧内容被裁且无横向滚动条（v0.7.3）
+
+根因是三个条件同时缺失：
+
+1. 全局 box-sizing 缺失
+   只有一处 input 写了 border-box，其余都是默认 content-box。
+   border/padding 会在 width:100% 之外额外撑宽，配合 .twb-root 的
+   overflow:hidden，超出部分直接被裁掉。
+   改为 `.twb-root, .twb-root *` 统一 border-box
+   （限定在 .twb-root 内，不影响宿主其它面板）。
+
+2. flex 子项 min-width:auto 阻止收缩
+   浏览器默认 min-width:auto，flex 子项会被内容顶到最小需求宽度，
+   容器不再收缩，于是没机会触发自己的滚动条。
+   给 .twb-root 与 .twb-body 显式 min-width:0，滚动交给 .twb-body。
+
+3. 溢出容器用了 hidden 而非 auto
+   .twb-table-wrap 原本 overflow:hidden —— 列多时直接裁掉。
+   改为 overflow-x:auto，并给 .twb-table 保底 min-width:420px。
+
+顺带修正的宽度：
+- 看板列宽 178px 改为 150px（7 列总宽 1122px，1440 屏可完整放下）
+- .twb-split 右侧 1fr 改为 minmax(0,1fr)（1fr 最小值是 auto，同样会被撑开）
+- .twb-split 断点 900 改为 1080px（提前切单栏）
+- Mail 页分栏同步加 minmax(0,1fr)
+
+固化检查：check.mjs 新增 6 项布局校验 —— box-sizing、body 的
+min-width/overflow、表格容器 overflow-x、表格最小宽度、分栏 minmax(0,1fr)。
+已反向验证：删掉 min-width:0 会被拦下。
+
+这类问题所有功能测试都过 —— 功能全对，只是窗口一窄内容就消失。

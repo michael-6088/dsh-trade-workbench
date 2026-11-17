@@ -82,5 +82,29 @@ if (!/injectStyles\(/.test(client.replace(/function injectStyles\(/g, ""))) {
   errors.push("client.js 从未调用 injectStyles（样式不会注入）");
 }
 
+
+/* ── 响应式布局：窄窗不被裁切 ────────────────────────────
+ * 校验滚动链路的关键属性。这类问题不会让任何测试失败 ——
+ * 功能全对，只是窗口一窄右侧内容就没了，而且没有滚动条能找回。
+ *
+ * 三个必要条件缺一不可：
+ *   1. box-sizing 统一，否则 border/padding 会额外撑宽
+ *   2. flex/grid 子项 min-width:0，否则被内容顶到最小需求宽度
+ *   3. 溢出容器自身 overflow-x:auto，而不是父级 hidden 直接裁掉
+ */
+const layoutHooks = [
+  [/box-sizing:\s*border-box/, "缺少全局 box-sizing: border-box"],
+  [/\.twb-body\s*\{[^}]*min-width:\s*0/, ".twb-body 缺少 min-width: 0（flex 子项会被内容撑破）"],
+  [/\.twb-body\s*\{[^}]*overflow:\s*auto/, ".twb-body 缺少 overflow: auto"],
+  [/\.twb-table-wrap\s*\{[^}]*overflow-x:\s*auto/, "表格容器缺少 overflow-x: auto（宽表格会被裁）"],
+  [/\.twb-table\s*\{[^}]*min-width:\s*\d+px/, "表格缺少最小宽度保底"],
+  [/grid-template-columns:\s*minmax\([^)]*\)\s+minmax\(0,\s*1fr\)/, "分栏右侧应为 minmax(0,1fr)"],
+];
+if (css) {
+  for (const [re, msg] of layoutHooks) {
+    if (!re.test(css)) errors.push("布局: " + msg);
+  }
+}
+
 if (errors.length) { console.error("check FAILED:\n" + errors.join("\n")); process.exit(1); }
 console.log("check ok");

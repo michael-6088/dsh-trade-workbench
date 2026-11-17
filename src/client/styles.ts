@@ -277,8 +277,23 @@ const CSS = `
 }
 
 /* ── 骨架 ───────────────────────────────────────────────── */
+/*
+ * box-sizing 必须在根上统一声明。
+ *
+ * 不加的话，任何 border/padding 都会在 width:100% 之外额外撑大元素；
+ * 再叠加 .twb-root 的 overflow:hidden，超出部分直接被裁掉 ——
+ * 表现就是窗口一窄右侧内容消失、且没有滚动条可找回。
+ * 限定在 .twb-root 内，避免影响宿主自己的其它面板。
+ */
+.twb-root,
+.twb-root *,
+.twb-root *::before,
+.twb-root *::after { box-sizing: border-box; }
+
 .twb-root {
-  display: flex; flex-direction: column; height: 100%; overflow: hidden;
+  display: flex; flex-direction: column; height: 100%;
+  /* 容器本身不滚动：滚动交给 .twb-body，这样顶栏保持固定 */
+  overflow: hidden;
   color: var(--twb-fg); font-family: var(--twb-font); font-size: var(--twb-fs-md);
   background: var(--twb-base-grad);
   -webkit-font-smoothing: var(--twb-smoothing, antialiased);
@@ -286,6 +301,8 @@ const CSS = `
   font-variant-numeric: tabular-nums;
   letter-spacing: 0;
   line-height: 1.55;
+  /* 防止 flex 子项被内容撑破（min-width 默认 auto 会阻止收缩） */
+  min-width: 0;
 }
 
 /* 顶栏：毛玻璃 + 渐变底。sticky 让长页面滚动时导航常驻。 */
@@ -359,8 +376,17 @@ const CSS = `
 }
 
 /* ── 主体 ───────────────────────────────────────────────── */
+/*
+ * 横向滚动条的关键：flex 子项默认 min-width:auto，会被内容顶到最小需求宽度，
+ * 于是容器不再收缩、超出的部分被 .twb-root 的 overflow:hidden 裁掉且无法滚动。
+ * 显式 min-width:0 让 .twb-body 能缩到比内容更窄，从而由自己的 overflow:auto
+ * 接管横向滚动。
+ */
 .twb-body {
-  flex: 1 1 auto; overflow: auto;
+  flex: 1 1 auto;
+  overflow: auto;
+  min-width: 0;
+  overscroll-behavior: contain;
   padding: var(--twb-sp-6) var(--twb-sp-6) var(--twb-sp-8);
   scrollbar-width: thin;
   scrollbar-color: var(--twb-line-strong) transparent;
@@ -517,9 +543,16 @@ textarea.twb-input { resize: vertical; line-height: 1.65; min-height: 64px; font
 /* ── 表格：数据展示核心资产 ─────────────────────────────── */
 .twb-table-wrap {
   border: 1px solid var(--twb-line); border-radius: var(--twb-r);
-  overflow: hidden; background: var(--twb-raised-grad);
+  /* 列多时横向可滚，而不是被裁掉。圆角靠 border-radius 而非 overflow:hidden，
+     否则会把滚动条一起裁掉。 */
+  overflow-x: auto;
+  overflow-y: visible;
+  background: var(--twb-raised-grad);
   box-shadow: var(--twb-shadow-sm);
+  min-width: 0;
 }
+/* 表格自身保证最小可读宽度：低于此值就交给外层滚动条 */
+.twb-table { min-width: 420px; }
 .twb-table { width: 100%; border-collapse: separate; border-spacing: 0; }
 .twb-table th {
   text-align: left; font-size: var(--twb-fs-xs); font-weight: 680;
@@ -861,8 +894,11 @@ textarea.twb-input { resize: vertical; line-height: 1.65; min-height: 64px; font
 
 /* ── 看板 ───────────────────────────────────────────────── */
 .twb-board {
-  display: grid; gap: 10px; overflow-x: auto; padding-bottom: 6px;
-  grid-auto-flow: column; grid-auto-columns: minmax(178px, 1fr);
+  display: grid; gap: var(--twb-sp-3); padding-bottom: 6px;
+  /* 列宽收窄到 150px：7 列总宽 7*150+6*12≈1122px，1440 屏可完整放下；
+     更窄时由外层 .twb-body 的统一横向滚动条接管，不在这里再套一层 */
+  grid-auto-flow: column; grid-auto-columns: minmax(150px, 1fr);
+  min-width: 0;
 }
 .twb-col-head {
   display: flex; align-items: center; justify-content: space-between;
@@ -1014,9 +1050,13 @@ textarea.twb-input { resize: vertical; line-height: 1.65; min-height: 64px; font
 /* 双栏主体：左侧列表定宽，右侧详情自适应 */
 .twb-split {
   display: grid; gap: var(--twb-sp-4); align-items: start;
-  grid-template-columns: minmax(280px, 360px) 1fr;
+  /* 右侧用 minmax(0,1fr)：1fr 的最小值默认是 auto，会被内容顶宽 */
+  grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
+  min-width: 0;
 }
-@media (max-width: 900px) { .twb-split { grid-template-columns: 1fr; } }
+@media (max-width: 1080px) {
+  .twb-split { grid-template-columns: minmax(0, 1fr); }
+}
 
 /* 面板容器：统一表面、边框、留白 */
 .twb-panel {
