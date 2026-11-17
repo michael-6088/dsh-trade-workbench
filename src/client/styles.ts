@@ -1,18 +1,3 @@
-/**
- * 设计系统：现代工业风。
- *
- * 三条原则：
- * 1. 精密感 —— 极细边框（1px / .5px 描边）、等宽数字、严格对齐的栅格、
- *    统一 4px 基准间距。工业界面的高级感来自"对齐"而非装饰。
- * 2. 层次靠明度不靠颜色 —— 表面分 4 级（base / raised / overlay / sunken），
- *    强调色只用于焦点、数据高亮和状态，绝不铺满。
- * 3. 动效克制 —— 只有 120-180ms 的位移与透明度过渡，无弹跳、无旋转，
- *    减少动效噪音让数据本身成为视觉焦点。
- *
- * 色板跟随宿主主题：所有 --twb-* 都以宿主 --dshe-* 变量为首选，
- * 宿主没有该变量时用工业风默认值兜底。这样既保证与 DSH 主题一致，
- * 又能独立成体系。
- */
 const CSS = `
 /* ── 设计令牌 ───────────────────────────────────────────── */
 /*
@@ -128,14 +113,18 @@ const CSS = `
 .twb-root > * { position: relative; z-index: 1; }
 
 /* 浅色令牌：显式 data-theme=light 与系统跟随共用同一组值 */
+/* 浅色令牌：显式 data-theme=light 与系统跟随共用同一组值。
+   注意这是两份独立的变量块 —— CSS 变量不能跨选择器复用，
+   改动其中一份必须同步另一份。 */
 .twb-root[data-theme="light"] {
+  color-scheme: light;
+
   /* 表面 */
   --twb-base: var(--dshe-background, #f6f7f9);
   --twb-raised: var(--dshe-surface, #ffffff);
   --twb-overlay: var(--dshe-surface-raised, #ffffff);
   --twb-elevated: #ffffff;
   --twb-sunken: rgba(15, 23, 42, .035);
-
   --twb-base-grad: linear-gradient(180deg, #f8f9fb 0%, #f2f4f7 100%);
   --twb-raised-grad: linear-gradient(180deg, #ffffff 0%, #fbfcfd 100%);
   --twb-overlay-grad: linear-gradient(180deg, #ffffff 0%, #fafbfc 100%);
@@ -151,7 +140,7 @@ const CSS = `
   --twb-hairline: rgba(15, 23, 42, .06);
   --twb-edge-light: rgba(255, 255, 255, .9);
 
-  /* 文字：浅色下不透明度要更高，否则半透明文字衰减过快 */
+  /* 文字 */
   --twb-fg: var(--dshe-foreground, #0f172a);
   --twb-fg-2: rgba(15, 23, 42, .78);
   --twb-fg-3: rgba(15, 23, 42, .62);
@@ -177,87 +166,64 @@ const CSS = `
   /* 浅色下关闭 antialiased：它会让笔画变细发灰 */
   --twb-smoothing: auto;
 
-  /* 阴影：浅色用低对比度、大范围，避免脏边 */
+  /* 阴影 */
   --twb-shadow-sm: 0 1px 2px rgba(15, 23, 42, .05);
   --twb-shadow: 0 1px 3px rgba(15, 23, 42, .06), 0 6px 16px rgba(15, 23, 42, .05);
   --twb-shadow-lg: 0 4px 12px rgba(15, 23, 42, .08), 0 20px 56px rgba(15, 23, 42, .10);
   --twb-glow: 0 0 0 3px var(--twb-accent-dim);
 }
 
-/* 显式浅色：覆盖系统偏好 */
-%SEL% { color-scheme: light; }
-
-/* 跟随系统：仅在未显式指定深色时生效 */
-@media (prefers-color-scheme: light) {
-  .twb-root:not([data-theme="dark"]) {
-    color-scheme: light;
-  }
-
+/* 跟随系统：仅在用户没有显式选择深色/浅色时生效 */
 @media (prefers-color-scheme: light) {
   .twb-root:not([data-theme="dark"]):not([data-theme="light"]) {
-  /* 表面 */
-  --twb-base: var(--dshe-background, #f6f7f9);
-  --twb-raised: var(--dshe-surface, #ffffff);
-  --twb-overlay: var(--dshe-surface-raised, #ffffff);
-  --twb-elevated: #ffffff;
-  --twb-sunken: rgba(15, 23, 42, .035);
-
-  --twb-base-grad: linear-gradient(180deg, #f8f9fb 0%, #f2f4f7 100%);
-  --twb-raised-grad: linear-gradient(180deg, #ffffff 0%, #fbfcfd 100%);
-  --twb-overlay-grad: linear-gradient(180deg, #ffffff 0%, #fafbfc 100%);
-
-  /* 交互态 */
-  --twb-hover: rgba(15, 23, 42, .035);
-  --twb-active: rgba(15, 23, 42, .06);
-  --twb-selected: rgba(180, 100, 0, .08);
-
-  /* 线条 */
-  --twb-line: var(--dshe-border, rgba(15, 23, 42, .10));
-  --twb-line-strong: rgba(15, 23, 42, .18);
-  --twb-hairline: rgba(15, 23, 42, .06);
-  --twb-edge-light: rgba(255, 255, 255, .9);
-
-  /* 文字：浅色下不透明度要更高，否则半透明文字衰减过快 */
-  --twb-fg: var(--dshe-foreground, #0f172a);
-  --twb-fg-2: rgba(15, 23, 42, .78);
-  --twb-fg-3: rgba(15, 23, 42, .62);
-  --twb-fg-4: rgba(15, 23, 42, .52);
-
-  /* 强调色 */
-  --twb-accent: var(--dshe-accent, #b45309);
-  --twb-accent-dim: rgba(180, 83, 9, .09);
-  --twb-accent-line: rgba(180, 83, 9, .28);
-  --twb-accent-glow: rgba(180, 83, 9, .07);
-
-  --twb-ok: #047857;
-  --twb-ok-dim: rgba(4, 120, 87, .09);
-  --twb-warn: #a16207;
-  --twb-warn-dim: rgba(161, 98, 7, .10);
-  --twb-err: #be123c;
-  --twb-err-dim: rgba(190, 18, 60, .09);
-  --twb-info: #1d4ed8;
-  --twb-info-dim: rgba(29, 78, 216, .08);
-  --twb-violet: #6d28d9;
-  --twb-cyan: #0e7490;
-
-  /* 浅色下关闭 antialiased：它会让笔画变细发灰 */
-  --twb-smoothing: auto;
-
-  /* 阴影：浅色用低对比度、大范围，避免脏边 */
-  --twb-shadow-sm: 0 1px 2px rgba(15, 23, 42, .05);
-  --twb-shadow: 0 1px 3px rgba(15, 23, 42, .06), 0 6px 16px rgba(15, 23, 42, .05);
-  --twb-shadow-lg: 0 4px 12px rgba(15, 23, 42, .08), 0 20px 56px rgba(15, 23, 42, .10);
-  --twb-glow: 0 0 0 3px var(--twb-accent-dim);
-}
-
-/* 显式浅色：覆盖系统偏好 */
-%SEL% { color-scheme: light; }
-
-/* 跟随系统：仅在未显式指定深色时生效 */
-@media (prefers-color-scheme: light) {
-  .twb-root:not([data-theme="dark"]) {
     color-scheme: light;
-    }
+
+    --twb-base: var(--dshe-background, #f6f7f9);
+    --twb-raised: var(--dshe-surface, #ffffff);
+    --twb-overlay: var(--dshe-surface-raised, #ffffff);
+    --twb-elevated: #ffffff;
+    --twb-sunken: rgba(15, 23, 42, .035);
+    --twb-base-grad: linear-gradient(180deg, #f8f9fb 0%, #f2f4f7 100%);
+    --twb-raised-grad: linear-gradient(180deg, #ffffff 0%, #fbfcfd 100%);
+    --twb-overlay-grad: linear-gradient(180deg, #ffffff 0%, #fafbfc 100%);
+
+    --twb-hover: rgba(15, 23, 42, .035);
+    --twb-active: rgba(15, 23, 42, .06);
+    --twb-selected: rgba(180, 100, 0, .08);
+
+    --twb-line: var(--dshe-border, rgba(15, 23, 42, .10));
+    --twb-line-strong: rgba(15, 23, 42, .18);
+    --twb-hairline: rgba(15, 23, 42, .06);
+    --twb-edge-light: rgba(255, 255, 255, .9);
+
+    --twb-fg: var(--dshe-foreground, #0f172a);
+    --twb-fg-2: rgba(15, 23, 42, .78);
+    --twb-fg-3: rgba(15, 23, 42, .62);
+    --twb-fg-4: rgba(15, 23, 42, .52);
+
+    --twb-accent: var(--dshe-accent, #b45309);
+    --twb-accent-dim: rgba(180, 83, 9, .09);
+    --twb-accent-line: rgba(180, 83, 9, .28);
+    --twb-accent-glow: rgba(180, 83, 9, .07);
+
+    --twb-ok: #047857;
+    --twb-ok-dim: rgba(4, 120, 87, .09);
+    --twb-warn: #a16207;
+    --twb-warn-dim: rgba(161, 98, 7, .10);
+    --twb-err: #be123c;
+    --twb-err-dim: rgba(190, 18, 60, .09);
+    --twb-info: #1d4ed8;
+    --twb-info-dim: rgba(29, 78, 216, .08);
+    --twb-violet: #6d28d9;
+    --twb-cyan: #0e7490;
+
+    --twb-smoothing: auto;
+
+    --twb-shadow-sm: 0 1px 2px rgba(15, 23, 42, .05);
+    --twb-shadow: 0 1px 3px rgba(15, 23, 42, .06), 0 6px 16px rgba(15, 23, 42, .05);
+    --twb-shadow-lg: 0 4px 12px rgba(15, 23, 42, .08), 0 20px 56px rgba(15, 23, 42, .10);
+    --twb-glow: 0 0 0 3px var(--twb-accent-dim);
+  }
 }
 
 /* ── 骨架 ───────────────────────────────────────────────── */
