@@ -33,8 +33,17 @@
     "cordis.patch.yml",
     "icon.svg",
     "locale/*.json",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/michael-6088/dsh-trade-workbench.git"
+  },
+  "homepage": "https://github.com/michael-6088/dsh-trade-workbench#readme",
+  "bugs": {
+    "url": "https://github.com/michael-6088/dsh-trade-workbench/issues"
+  },
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"

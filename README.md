@@ -51,16 +51,71 @@ DeepSeek Harness 插件：左侧栏入口的全流程外贸工作台，覆盖**�
 
 ## 安装
 
-开发（本仓库目录）：
+仓库已提交构建产物（`lib/index.js`、`lib/client.js`），因此**安装不需要 esbuild / TypeScript**。四种装法任选其一。
+
+### 准备：先放行依赖构建脚本
+
+本插件的知识库导入依赖 `tesseract.js`（OCR，带动中文语言包，约 67MB）与 `unpdf`（PDF 文本层）。
+`tesseract.js` 带 postinstall 脚本，pnpm 默认会拦截，直接装会报：
+
+```
+[ERR_PNPM_IGNORED_BUILDS] Ignored build scripts: tesseract.js@7.0.0
+```
+
+先编辑 `~/.dsh/profiles/desktop/pnpm-workspace.yaml`，在文件末尾追加两行（**键名必须带版本号**，
+只写 `tesseract.js` 会被 pnpm 当成占位值，校验不通过）：
+
+```yaml
+allowBuilds:
+  tesseract.js@7.0.0: true
+```
+
+> 若报的版本号不是 `7.0.0`，照 pnpm 打印的那一行原样抄进去即可。
+
+### 方式 A：从 GitHub 直装（跟最新提交，适合开发者）
+
+```bash
+dsh plugin --profile desktop add git+https://github.com/michael-6088/dsh-trade-workbench.git
+```
+
+### 方式 B：从 Release 的 tgz 装（锁版本，推荐给一般用户）
+
+下载本仓库 Releases 里的 `dsh-trade-workbench-<版本>.tgz`，然后：
+
+```bash
+dsh plugin --profile desktop add file:D:/下载/dsh-trade-workbench-0.7.4.tgz
+```
+
+### 方式 C：从 npm 装
+
+```bash
+dsh plugin --profile desktop add dsh-trade-workbench
+```
+
+### 方式 D：本地目录 link（改代码时用）
 
 ```bash
 npm install && npm run build
 dsh plugin --profile desktop add link:"<本目录绝对路径>"
 ```
 
-确保 `profiles/<profile>/package.json` 的 `dsh.profile.bundles` 数组里包含 `dsh-trade-workbench`。
+> `link:` 不安装依赖，`node_modules` 必须事先在插件目录里建好，否则 OCR 与 PDF 导入不可用。
 
-> Host 半身改动需要重启 DSH 才生效；Client 半身改动刷新页面即可。
+### 装完确认
+
+```bash
+# 1. 清单里能看到，且已进 bundles 数组
+cat ~/.dsh/profiles/desktop/package.json
+
+# 2. 插件可解析到真实目录
+node -e "console.log(require.resolve('dsh-trade-workbench/package.json', {paths:['<profile 目录>']}))"
+```
+
+`dsh plugin add` 会自动把包名追加进 `dsh.profile.bundles`。若手动装的，需自行补上。
+
+启动后左侧栏应出现「外贸工作台」图标；Host 半身改动需重启 DSH，Client 半身改动刷新页面即可。
+
+> **改了源码务必 `npm run build` 再提交** —— 别人从 git 装到的是 `lib/` 里的产物，不是 `src/`。
 
 ## 与 dsh-waimao 的关系
 
